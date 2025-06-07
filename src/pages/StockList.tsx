@@ -7,16 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, RefreshCw, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { upstoxApi } from '../services/upstoxApi';
 import { useToast } from '@/hooks/use-toast';
-
-// Popular NSE stocks for multi-quote API
-const popularStocks = [
-  'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 
-  'KOTAKBANK', 'HINDUNILVR', 'SBIN', 'BHARTIARTL', 'ITC',
-  'ASIANPAINT', 'LT', 'AXISBANK', 'MARUTI', 'SUNPHARMA'
-];
 
 // Helper functions moved outside component to prevent re-creation
 const getSectorByScrip = (symbol: string) => {
@@ -67,18 +61,21 @@ const StockList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('');
+  const [peFilter, setPeFilter] = useState('');
+  const [callFilter, setCallFilter] = useState('');
 
-  // Fetch stock data using Upstox API
+  // Fetch all stocks data
   const { data: stockData, isLoading, error, refetch } = useQuery({
-    queryKey: ['stocks', popularStocks],
+    queryKey: ['all-stocks'],
     queryFn: async () => {
-      console.log('Fetching stock data from Upstox...');
-      const response = await upstoxApi.getMultipleQuotes(popularStocks);
-      console.log('Stock data response:', response);
+      console.log('Fetching all stock data...');
+      const response = await upstoxApi.getAllStocks();
+      console.log('All stock data response:', response);
       return response;
     },
-    staleTime: 30000, // 30 seconds
-    retry: 2
+    staleTime: 60000, // 1 minute
+    retry: 1
   });
 
   // Handle error with useEffect to prevent infinite re-renders
@@ -86,54 +83,88 @@ const StockList = () => {
     if (error) {
       console.error('Error fetching stocks:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch stock data. Using demo data.",
+        title: "API Error",
+        description: "Using demo data with 1600+ stocks for demonstration.",
         variant: "destructive",
       });
     }
   }, [error, toast]);
 
-  // Process and format stock data - stabilized with proper dependency
+  // Process and format stock data
   const processedStocks = React.useMemo(() => {
     if (!stockData?.data) return [];
     
-    return Object.entries(stockData.data).map(([key, stock]: [string, any]) => {
-      const symbol = key.split(':')[1] || key;
-      return {
-        symbol,
-        name: stock.instrument_name || symbol,
-        cmp: stock.last_price || 0,
-        change: stock.net_change || 0,
-        changePercent: stock.percentage_change || 0,
-        high52w: stock.year_high || 0,
-        low52w: stock.year_low || 0,
-        pe: stock.pe_ratio || 'N/A',
-        rsi: Math.floor(Math.random() * 100), // Mock RSI as it's not in basic quote
-        macd: stock.net_change > 0 ? 'Bullish' : stock.net_change < 0 ? 'Bearish' : 'Neutral',
-        sector: getSectorByScrip(symbol),
-        call: getRecommendation(stock.percentage_change || 0),
-        volume: stock.volume || 0,
-        dayHigh: stock.day_high || 0,
-        dayLow: stock.day_low || 0
-      };
-    });
-  }, [stockData?.data]); // More specific dependency
+    return stockData.data.map((stock: any) => ({
+      symbol: stock.symbol,
+      name: stock.instrument_name || stock.symbol,
+      cmp: stock.last_price || 0,
+      change: stock.net_change || 0,
+      changePercent: stock.percentage_change || 0,
+      high52w: stock.year_high || 0,
+      low52w: stock.year_low || 0,
+      pe: stock.pe_ratio || 'N/A',
+      rsi: Math.floor(Math.random() * 100), // Mock RSI
+      macd: stock.net_change > 0 ? 'Bullish' : stock.net_change < 0 ? 'Bearish' : 'Neutral',
+      sector: stock.sector || getSectorByScrip(stock.symbol),
+      call: getRecommendation(stock.percentage_change || 0),
+      volume: stock.volume || 0,
+      dayHigh: stock.day_high || 0,
+      dayLow: stock.day_low || 0,
+      marketCap: stock.market_cap || 0,
+      roe: stock.roe || 0,
+      debtToEquity: stock.debt_to_equity || 0
+    }));
+  }, [stockData?.data]);
 
-  // Filter stocks based on search term - computed directly in render
+  // Filter stocks based on all criteria
   const filteredStocks = React.useMemo(() => {
-    if (!searchTerm) {
-      return processedStocks;
-    }
-    return processedStocks.filter(stock => 
-      stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      stock.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, processedStocks]);
+    let filtered = processedStocks;
 
-  // Handle search input
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-  };
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(stock => 
+        stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        stock.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sector filter
+    if (sectorFilter && sectorFilter !== 'all') {
+      filtered = filtered.filter(stock => 
+        stock.sector.toLowerCase() === sectorFilter.toLowerCase()
+      );
+    }
+
+    // PE filter
+    if (peFilter && peFilter !== 'all') {
+      filtered = filtered.filter(stock => {
+        const pe = typeof stock.pe === 'number' ? stock.pe : 0;
+        switch (peFilter) {
+          case 'low':
+            return pe > 0 && pe <= 15;
+          case 'medium':
+            return pe > 15 && pe <= 25;
+          case 'high':
+            return pe > 25;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Call filter
+    if (callFilter && callFilter !== 'all') {
+      filtered = filtered.filter(stock => stock.call === callFilter);
+    }
+
+    return filtered;
+  }, [processedStocks, searchTerm, sectorFilter, peFilter, callFilter]);
+
+  // Get unique sectors for filter dropdown
+  const uniqueSectors = React.useMemo(() => {
+    const sectors = [...new Set(processedStocks.map(stock => stock.sector))];
+    return sectors.sort();
+  }, [processedStocks]);
 
   // Handle refresh
   const handleRefresh = () => {
@@ -142,6 +173,14 @@ const StockList = () => {
       title: "Data Refreshed",
       description: "Stock data has been updated",
     });
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSectorFilter('');
+    setPeFilter('');
+    setCallFilter('');
   };
 
   return (
@@ -153,7 +192,9 @@ const StockList = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Stock List</h1>
-              <p className="text-slate-400">Live stock data powered by Upstox API</p>
+              <p className="text-slate-400">
+                Comprehensive stock data - {filteredStocks.length} of {processedStocks.length} stocks
+              </p>
             </div>
             <Button 
               onClick={handleRefresh}
@@ -167,16 +208,72 @@ const StockList = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <Input
-              placeholder="Search stocks by symbol or name..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 bg-slate-800 border-slate-700 text-white placeholder-slate-400"
-            />
+        {/* Filters Section */}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-slate-700">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="h-5 w-5 text-emerald-400" />
+            <h2 className="text-white font-semibold">Filters</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <Input
+                placeholder="Search stocks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+              />
+            </div>
+
+            {/* Sector Filter */}
+            <Select value={sectorFilter} onValueChange={setSectorFilter}>
+              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectValue placeholder="All Sectors" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="all">All Sectors</SelectItem>
+                {uniqueSectors.map(sector => (
+                  <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* PE Filter */}
+            <Select value={peFilter} onValueChange={setPeFilter}>
+              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectValue placeholder="All P/E" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="all">All P/E</SelectItem>
+                <SelectItem value="low">Low (0-15)</SelectItem>
+                <SelectItem value="medium">Medium (15-25)</SelectItem>
+                <SelectItem value="high">High (25+)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Call Filter */}
+            <Select value={callFilter} onValueChange={setCallFilter}>
+              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectValue placeholder="All Calls" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="all">All Calls</SelectItem>
+                <SelectItem value="BUY">BUY</SelectItem>
+                <SelectItem value="HOLD">HOLD</SelectItem>
+                <SelectItem value="SELL">SELL</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Clear Filters */}
+            <Button 
+              onClick={clearFilters}
+              variant="outline"
+              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            >
+              Clear All
+            </Button>
           </div>
         </div>
 
@@ -189,7 +286,7 @@ const StockList = () => {
         )}
 
         {/* Stock Table */}
-        {!isLoading && (
+        {!isLoading && filteredStocks.length > 0 && (
           <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
             <Table>
               <TableHeader>
@@ -200,7 +297,7 @@ const StockList = () => {
                   <TableHead className="text-slate-300 font-semibold">Change</TableHead>
                   <TableHead className="text-slate-300 font-semibold">52W High/Low</TableHead>
                   <TableHead className="text-slate-300 font-semibold">Volume</TableHead>
-                  <TableHead className="text-slate-300 font-semibold">MACD</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">P/E</TableHead>
                   <TableHead className="text-slate-300 font-semibold">Sector</TableHead>
                   <TableHead className="text-slate-300 font-semibold">Call</TableHead>
                 </TableRow>
@@ -228,15 +325,7 @@ const StockList = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-slate-300">{stock.volume.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        stock.macd === 'Bullish' ? 'bg-green-500/20 text-green-400' :
-                        stock.macd === 'Bearish' ? 'bg-red-500/20 text-red-400' :
-                        'bg-gray-500/20 text-gray-400'
-                      }`}>
-                        {stock.macd}
-                      </span>
-                    </TableCell>
+                    <TableCell className="text-slate-300">{typeof stock.pe === 'number' ? stock.pe.toFixed(1) : stock.pe}</TableCell>
                     <TableCell className="text-slate-300">{stock.sector}</TableCell>
                     <TableCell>
                       <Badge className={`${getCallBadgeColor(stock.call)} text-white font-semibold`}>
@@ -251,9 +340,28 @@ const StockList = () => {
         )}
 
         {/* No Results */}
-        {!isLoading && filteredStocks.length === 0 && (
+        {!isLoading && filteredStocks.length === 0 && processedStocks.length > 0 && (
           <div className="text-center py-8">
-            <p className="text-slate-400">No stocks found matching your search.</p>
+            <p className="text-slate-400">No stocks found matching your filters.</p>
+            <Button 
+              onClick={clearFilters}
+              className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+            >
+              Clear Filters
+            </Button>
+          </div>
+        )}
+
+        {/* No Data */}
+        {!isLoading && processedStocks.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-slate-400">No stock data available.</p>
+            <Button 
+              onClick={handleRefresh}
+              className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+            >
+              Refresh Data
+            </Button>
           </div>
         )}
       </div>
