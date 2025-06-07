@@ -18,6 +18,51 @@ const popularStocks = [
   'ASIANPAINT', 'LT', 'AXISBANK', 'MARUTI', 'SUNPHARMA'
 ];
 
+// Helper functions moved outside component to prevent re-creation
+const getSectorByScrip = (symbol: string) => {
+  const sectors: { [key: string]: string } = {
+    'RELIANCE': 'Energy',
+    'TCS': 'IT',
+    'INFY': 'IT',
+    'HDFCBANK': 'Banking',
+    'ICICIBANK': 'Banking',
+    'KOTAKBANK': 'Banking',
+    'SBIN': 'Banking',
+    'AXISBANK': 'Banking',
+    'HINDUNILVR': 'FMCG',
+    'ITC': 'FMCG',
+    'BHARTIARTL': 'Telecom',
+    'ASIANPAINT': 'Paints',
+    'LT': 'Infrastructure',
+    'MARUTI': 'Auto',
+    'SUNPHARMA': 'Pharma'
+  };
+  return sectors[symbol] || 'Others';
+};
+
+const getRecommendation = (changePercent: number) => {
+  if (changePercent > 2) return 'BUY';
+  if (changePercent < -2) return 'SELL';
+  return 'HOLD';
+};
+
+const getCallBadgeColor = (call: string) => {
+  switch (call) {
+    case 'BUY':
+      return 'bg-green-500 hover:bg-green-600';
+    case 'SELL':
+      return 'bg-red-500 hover:bg-red-600';
+    case 'HOLD':
+      return 'bg-yellow-500 hover:bg-yellow-600';
+    default:
+      return 'bg-gray-500 hover:bg-gray-600';
+  }
+};
+
+const formatCurrency = (value: number) => {
+  return `₹${value.toFixed(2)}`;
+};
+
 const StockList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,7 +81,7 @@ const StockList = () => {
     retry: 2
   });
 
-  // Process and format stock data
+  // Process and format stock data - stabilized with proper dependency
   const processedStocks = React.useMemo(() => {
     if (!stockData?.data) return [];
     
@@ -60,7 +105,7 @@ const StockList = () => {
         dayLow: stock.day_low || 0
       };
     });
-  }, [stockData]);
+  }, [stockData?.data]); // More specific dependency
 
   // Filter stocks based on search term - computed directly in render
   const filteredStocks = React.useMemo(() => {
@@ -96,51 +141,6 @@ const StockList = () => {
       variant: "destructive",
     });
   }
-
-  // Helper functions
-  const getSectorByScrip = (symbol: string) => {
-    const sectors: { [key: string]: string } = {
-      'RELIANCE': 'Energy',
-      'TCS': 'IT',
-      'INFY': 'IT',
-      'HDFCBANK': 'Banking',
-      'ICICIBANK': 'Banking',
-      'KOTAKBANK': 'Banking',
-      'SBIN': 'Banking',
-      'AXISBANK': 'Banking',
-      'HINDUNILVR': 'FMCG',
-      'ITC': 'FMCG',
-      'BHARTIARTL': 'Telecom',
-      'ASIANPAINT': 'Paints',
-      'LT': 'Infrastructure',
-      'MARUTI': 'Auto',
-      'SUNPHARMA': 'Pharma'
-    };
-    return sectors[symbol] || 'Others';
-  };
-
-  const getRecommendation = (changePercent: number) => {
-    if (changePercent > 2) return 'BUY';
-    if (changePercent < -2) return 'SELL';
-    return 'HOLD';
-  };
-
-  const getCallBadgeColor = (call: string) => {
-    switch (call) {
-      case 'BUY':
-        return 'bg-green-500 hover:bg-green-600';
-      case 'SELL':
-        return 'bg-red-500 hover:bg-red-600';
-      case 'HOLD':
-        return 'bg-yellow-500 hover:bg-yellow-600';
-      default:
-        return 'bg-gray-500 hover:bg-gray-600';
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return `₹${value.toFixed(2)}`;
-  };
 
   return (
     <div className="min-h-screen bg-slate-900">
