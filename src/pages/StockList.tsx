@@ -1,4 +1,6 @@
-import React, { useState, useNavigate } from 'react';
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
