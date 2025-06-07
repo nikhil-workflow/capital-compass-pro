@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Navigation from '../components/Navigation';
@@ -22,7 +22,6 @@ const StockList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredStocks, setFilteredStocks] = useState([]);
 
   // Fetch stock data using Upstox API
   const { data: stockData, isLoading, error, refetch } = useQuery({
@@ -63,17 +62,15 @@ const StockList = () => {
     });
   }, [stockData]);
 
-  // Filter stocks based on search term
-  useEffect(() => {
+  // Filter stocks based on search term - computed directly in render
+  const filteredStocks = React.useMemo(() => {
     if (!searchTerm) {
-      setFilteredStocks(processedStocks);
-    } else {
-      const filtered = processedStocks.filter(stock => 
-        stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        stock.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredStocks(filtered);
+      return processedStocks;
     }
+    return processedStocks.filter(stock => 
+      stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      stock.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }, [searchTerm, processedStocks]);
 
   // Handle search input
