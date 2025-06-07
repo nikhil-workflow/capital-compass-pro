@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useNavigate } from 'react';
 import Navigation from '../components/Navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -82,6 +81,7 @@ const mockStocks = [
 ];
 
 const StockList = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredStocks, setFilteredStocks] = useState(mockStocks);
 
@@ -122,7 +122,7 @@ const StockList = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Stock List</h1>
-          <p className="text-slate-400">Comprehensive stock analysis and recommendations</p>
+          <p className="text-slate-400">Comprehensive stock analysis and recommendations powered by Upstox</p>
         </div>
 
         {/* Search Bar */}
@@ -160,10 +160,7 @@ const StockList = () => {
                 <TableRow 
                   key={stock.symbol} 
                   className="border-b border-slate-700 hover:bg-slate-700/50 cursor-pointer transition-colors"
-                  onClick={() => {
-                    // In a real app, this would navigate to stock detail page
-                    console.log(`Navigate to ${stock.symbol} detail page`);
-                  }}
+                  onClick={() => navigate(`/stock/${stock.symbol}`)}
                 >
                   <TableCell className="font-medium text-white">{stock.symbol}</TableCell>
                   <TableCell className="text-slate-300">{stock.name}</TableCell>

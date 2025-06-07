@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import StockList from "./pages/StockList";
 import SearchFilter from "./pages/SearchFilter";
 import FuturesOptions from "./pages/FuturesOptions";
+import StockDetail from "./pages/StockDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/stocks" element={<StockList />} />
           <Route path="/search" element={<SearchFilter />} />
           <Route path="/futures-options" element={<FuturesOptions />} />
+          <Route path="/stock/:symbol" element={<StockDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
