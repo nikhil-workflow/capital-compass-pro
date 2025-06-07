@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Navigation from '../components/Navigation';
@@ -81,6 +81,18 @@ const StockList = () => {
     retry: 2
   });
 
+  // Handle error with useEffect to prevent infinite re-renders
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching stocks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch stock data. Using demo data.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
   // Process and format stock data - stabilized with proper dependency
   const processedStocks = React.useMemo(() => {
     if (!stockData?.data) return [];
@@ -131,16 +143,6 @@ const StockList = () => {
       description: "Stock data has been updated",
     });
   };
-
-  // Error handling
-  if (error) {
-    console.error('Error fetching stocks:', error);
-    toast({
-      title: "Error",
-      description: "Failed to fetch stock data. Using demo data.",
-      variant: "destructive",
-    });
-  }
 
   return (
     <div className="min-h-screen bg-slate-900">
