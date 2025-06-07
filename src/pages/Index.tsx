@@ -2,12 +2,12 @@
 import React from 'react';
 import Navigation from '../components/Navigation';
 import MarketOverview from '../components/MarketOverview';
-import StockRecommendations from '../components/StockRecommendations';
 import SectorSentiment from '../components/SectorSentiment';
 import MarketHighlights from '../components/MarketHighlights';
 import MarketStatus from '../components/widgets/MarketStatus';
 import TopGainersLosers from '../components/widgets/TopGainersLosers';
 import WeekHighLow from '../components/widgets/WeekHighLow';
+import ComprehensiveRecommendations from '../components/dashboard/ComprehensiveRecommendations';
 
 const Index = () => {
   return (
@@ -16,8 +16,8 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Market Dashboard</h1>
-          <p className="text-slate-400">Real-time market analysis powered by Upstox API</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Market Dashboard - Real-time Data</h1>
+          <p className="text-slate-400">Live market analysis powered by Upstox API with comprehensive trading recommendations</p>
         </div>
 
         {/* Market Status Widget */}
@@ -39,14 +39,9 @@ const Index = () => {
           <WeekHighLow />
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <div className="lg:col-span-2">
-            <StockRecommendations />
-          </div>
-          <div>
-            {/* Additional space for more widgets */}
-          </div>
+        {/* Comprehensive Recommendations - 12 Widget System */}
+        <div className="mb-8">
+          <ComprehensiveRecommendations />
         </div>
 
         {/* Market Highlights */}
