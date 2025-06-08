@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, AlertCircle } from 'lucide-react';
 
 interface RecommendationItem {
   symbol: string;
@@ -21,6 +21,7 @@ interface RecommendationWidgetProps {
   title: string;
   data: RecommendationItem[];
   isLoading: boolean;
+  error?: Error | null;
   icon?: React.ReactNode;
 }
 
@@ -28,6 +29,7 @@ const RecommendationWidget: React.FC<RecommendationWidgetProps> = ({
   title, 
   data, 
   isLoading, 
+  error,
   icon 
 }) => {
   const getRecommendationIcon = (rec: string) => {
@@ -59,6 +61,46 @@ const RecommendationWidget: React.FC<RecommendationWidgetProps> = ({
           {[...Array(3)].map((_, i) => (
             <div key={i} className="animate-pulse bg-slate-700 h-12 rounded"></div>
           ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white text-sm flex items-center gap-2">
+            {icon}
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-center gap-2 text-red-400 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            <span>API data unavailable</span>
+          </div>
+          <p className="text-slate-400 text-xs">
+            {error.message || 'Unable to fetch live data'}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white text-sm flex items-center gap-2">
+            {icon}
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="text-slate-400 text-sm text-center py-4">
+            No data available
+          </div>
         </CardContent>
       </Card>
     );

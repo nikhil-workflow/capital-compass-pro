@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "./pages/Login";
 import Index from "./pages/Index";
 import StockList from "./pages/StockList";
 import SearchFilter from "./pages/SearchFilter";
@@ -20,12 +22,32 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/stocks" element={<StockList />} />
-          <Route path="/search" element={<SearchFilter />} />
-          <Route path="/futures-options" element={<FuturesOptions />} />
-          <Route path="/stock/:symbol" element={<StockDetail />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } />
+          <Route path="/stocks" element={
+            <ProtectedRoute>
+              <StockList />
+            </ProtectedRoute>
+          } />
+          <Route path="/search" element={
+            <ProtectedRoute>
+              <SearchFilter />
+            </ProtectedRoute>
+          } />
+          <Route path="/futures-options" element={
+            <ProtectedRoute>
+              <FuturesOptions />
+            </ProtectedRoute>
+          } />
+          <Route path="/stock/:symbol" element={
+            <ProtectedRoute>
+              <StockDetail />
+            </ProtectedRoute>
+          } />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
