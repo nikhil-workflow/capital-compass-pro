@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -181,7 +182,7 @@ const StockList = () => {
   const uniqueSectors = useMemo(() => {
     if (!stockData?.data) return [];
     const sectors = [...new Set(stockData.data.map((stock: any) => stock.sector || getSectorByScrip(stock.symbol)))];
-    return sectors.sort();
+    return sectors.filter((sector): sector is string => typeof sector === 'string').sort();
   }, [stockData?.data]);
 
   // Handle pagination
@@ -326,7 +327,9 @@ const StockList = () => {
               <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="all">All Sectors</SelectItem>
                 {uniqueSectors.map(sector => (
-                  <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                  <SelectItem key={sector} value={sector}>
+                    {sector}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

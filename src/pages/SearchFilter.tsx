@@ -114,7 +114,7 @@ const SearchFilter = () => {
 
   const uniqueSectors = React.useMemo(() => {
     const sectors = [...new Set(processedStocks.map(stock => stock.sector))];
-    return sectors.sort();
+    return sectors.filter((sector): sector is string => typeof sector === 'string').sort();
   }, [processedStocks]);
 
   const formatCurrency = (value: number) => `₹${value.toFixed(2)}`;
@@ -201,7 +201,9 @@ const SearchFilter = () => {
                   <SelectContent className="bg-slate-700 border-slate-600">
                     <SelectItem value="all">All Sectors</SelectItem>
                     {uniqueSectors.map(sector => (
-                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                      <SelectItem key={sector} value={sector}>
+                        {sector}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
