@@ -550,6 +550,33 @@ class UpstoxApiService {
       return { data: [] };
     }
   }
+
+  async getStockForecasts(symbol: string) {
+    try {
+      return await this.makeIndianApiRequest(`/stock_forecasts?symbol=${symbol}`);
+    } catch (error) {
+      console.error(`Failed to fetch forecasts for ${symbol}:`, error);
+      return { data: null };
+    }
+  }
+
+  async getStockTargetPrice(symbol: string) {
+    try {
+      return await this.makeIndianApiRequest(`/stock_target_price?symbol=${symbol}`);
+    } catch (error) {
+      console.error(`Failed to fetch target price for ${symbol}:`, error);
+      return { data: null };
+    }
+  }
+
+  async getNews() {
+    try {
+      return await this.makeIndianApiRequest('/news');
+    } catch (error) {
+      console.error('Failed to fetch news:', error);
+      return { data: [] };
+    }
+  }
 }
 
 export const upstoxApi = new UpstoxApiService();
