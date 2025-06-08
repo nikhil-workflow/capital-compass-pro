@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Search, TrendingUp, TrendingDown, RefreshCw, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { upstoxApi } from '../services/upstoxApi';
@@ -66,15 +65,15 @@ const StockList = () => {
   const [peFilter, setPeFilter] = useState('');
   const [callFilter, setCallFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const itemsPerPage = 100;
 
-  // Fetch paginated stocks data with real-time updates
+  // Fetch all stocks data with real-time updates
   const { data: stockData, isLoading, error, refetch } = useQuery({
-    queryKey: ['stocks-paginated', currentPage, itemsPerPage],
+    queryKey: ['all-stocks'],
     queryFn: async () => {
-      console.log(`Fetching paginated stock data for page ${currentPage}...`);
-      const response = await upstoxApi.getAllStocksPaginated(currentPage, itemsPerPage);
-      console.log('Paginated stock data response:', response);
+      console.log('Fetching all stock data...');
+      const response = await upstoxApi.getAllStocks();
+      console.log('All stock data response:', response);
       return response;
     },
     staleTime: 30000, // 30 seconds for real-time feel
@@ -88,7 +87,7 @@ const StockList = () => {
       console.error('Error fetching stocks:', error);
       toast({
         title: "API Error",
-        description: "Using demo data. Real-time data will be available when Upstox API is properly configured.",
+        description: "Using demo data. Real-time data will be available when APIs are properly configured.",
         variant: "destructive",
       });
     }
@@ -99,21 +98,21 @@ const StockList = () => {
     if (!stockData?.data) return [];
     
     return stockData.data.map((stock: any) => ({
-      symbol: stock.symbol,
-      name: stock.instrument_name || stock.symbol,
-      cmp: stock.last_price || 0,
-      change: stock.net_change || 0,
-      changePercent: stock.percentage_change || 0,
-      high52w: stock.year_high || 0,
-      low52w: stock.year_low || 0,
-      pe: stock.pe_ratio || 'N/A',
+      symbol: stock.symbol || stock.name || 'Unknown',
+      name: stock.instrument_name || stock.name || stock.symbol || 'Unknown',
+      cmp: stock.last_price || stock.price || stock.ltp || 0,
+      change: stock.net_change || stock.change || 0,
+      changePercent: stock.percentage_change || stock.pchange || 0,
+      high52w: stock.year_high || stock.high_52w || 0,
+      low52w: stock.year_low || stock.low_52w || 0,
+      pe: stock.pe_ratio || stock.pe || 'N/A',
       rsi: Math.floor(Math.random() * 100), // Mock RSI
-      macd: stock.net_change > 0 ? 'Bullish' : stock.net_change < 0 ? 'Bearish' : 'Neutral',
-      sector: stock.sector || getSectorByScrip(stock.symbol),
-      call: getRecommendation(stock.percentage_change || 0),
+      macd: (stock.net_change || stock.change || 0) > 0 ? 'Bullish' : (stock.net_change || stock.change || 0) < 0 ? 'Bearish' : 'Neutral',
+      sector: stock.sector || getSectorByScrip(stock.symbol || stock.name || ''),
+      call: getRecommendation(stock.percentage_change || stock.pchange || 0),
       volume: stock.volume || 0,
-      dayHigh: stock.day_high || 0,
-      dayLow: stock.day_low || 0,
+      dayHigh: stock.day_high || stock.high || 0,
+      dayLow: stock.day_low || stock.low || 0,
       marketCap: stock.market_cap || 0,
       roe: stock.roe || 0,
       debtToEquity: stock.debt_to_equity || 0
@@ -122,28 +121,9 @@ const StockList = () => {
 
   // Filter stocks based on search and filters
   const filteredStocks = useMemo(() => {
-    if (!stockData?.data) return [];
+    if (!processedStocks) return [];
     
-    let filtered = stockData.data.map((stock: any) => ({
-      symbol: stock.symbol,
-      name: stock.instrument_name || stock.symbol,
-      cmp: stock.last_price || 0,
-      change: stock.net_change || 0,
-      changePercent: stock.percentage_change || 0,
-      high52w: stock.year_high || 0,
-      low52w: stock.year_low || 0,
-      pe: stock.pe_ratio || 'N/A',
-      rsi: Math.floor(Math.random() * 100),
-      macd: stock.net_change > 0 ? 'Bullish' : stock.net_change < 0 ? 'Bearish' : 'Neutral',
-      sector: stock.sector || getSectorByScrip(stock.symbol),
-      call: getRecommendation(stock.percentage_change || 0),
-      volume: stock.volume || 0,
-      dayHigh: stock.day_high || 0,
-      dayLow: stock.day_low || 0,
-      marketCap: stock.market_cap || 0,
-      roe: stock.roe || 0,
-      debtToEquity: stock.debt_to_equity || 0
-    }));
+    let filtered = processedStocks;
 
     // Apply filters
     if (searchTerm) {
@@ -176,14 +156,23 @@ const StockList = () => {
     }
 
     return filtered;
-  }, [stockData?.data, searchTerm, sectorFilter, peFilter, callFilter]);
+  }, [processedStocks, searchTerm, sectorFilter, peFilter, callFilter]);
+
+  // Paginate filtered stocks
+  const paginatedStocks = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredStocks.slice(startIndex, endIndex);
+  }, [filteredStocks, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredStocks.length / itemsPerPage);
 
   // Get unique sectors for filter
   const uniqueSectors = useMemo(() => {
-    if (!stockData?.data) return [];
-    const sectors = [...new Set(stockData.data.map((stock: any) => stock.sector || getSectorByScrip(stock.symbol)))];
+    if (!processedStocks) return [];
+    const sectors = [...new Set(processedStocks.map((stock: any) => stock.sector))];
     return sectors.filter((sector): sector is string => typeof sector === 'string').sort();
-  }, [stockData?.data]);
+  }, [processedStocks]);
 
   // Handle pagination
   const handlePageChange = useCallback((page: number) => {
@@ -208,72 +197,6 @@ const StockList = () => {
     setCurrentPage(1);
   }, []);
 
-  const renderPagination = () => {
-    if (!stockData?.pagination) return null;
-    
-    const { currentPage: current, totalPages, hasPrev, hasNext } = stockData.pagination;
-    
-    return (
-      <Pagination className="mt-6">
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious 
-              onClick={() => hasPrev && handlePageChange(current - 1)}
-              className={!hasPrev ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-            />
-          </PaginationItem>
-          
-          {current > 2 && (
-            <>
-              <PaginationItem>
-                <PaginationLink onClick={() => handlePageChange(1)} className="cursor-pointer">1</PaginationLink>
-              </PaginationItem>
-              {current > 3 && <PaginationEllipsis />}
-            </>
-          )}
-          
-          {current > 1 && (
-            <PaginationItem>
-              <PaginationLink onClick={() => handlePageChange(current - 1)} className="cursor-pointer">
-                {current - 1}
-              </PaginationLink>
-            </PaginationItem>
-          )}
-          
-          <PaginationItem>
-            <PaginationLink isActive className="cursor-pointer">{current}</PaginationLink>
-          </PaginationItem>
-          
-          {current < totalPages && (
-            <PaginationItem>
-              <PaginationLink onClick={() => handlePageChange(current + 1)} className="cursor-pointer">
-                {current + 1}
-              </PaginationLink>
-            </PaginationItem>
-          )}
-          
-          {current < totalPages - 1 && (
-            <>
-              {current < totalPages - 2 && <PaginationEllipsis />}
-              <PaginationItem>
-                <PaginationLink onClick={() => handlePageChange(totalPages)} className="cursor-pointer">
-                  {totalPages}
-                </PaginationLink>
-              </PaginationItem>
-            </>
-          )}
-          
-          <PaginationItem>
-            <PaginationNext 
-              onClick={() => hasNext && handlePageChange(current + 1)}
-              className={!hasNext ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-slate-900">
       <Navigation />
@@ -284,8 +207,8 @@ const StockList = () => {
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Stock List - Real-time Data</h1>
               <p className="text-slate-400">
-                Page {stockData?.pagination?.currentPage || 1} of {stockData?.pagination?.totalPages || 1} 
-                ({stockData?.pagination?.totalCount || 0} total stocks)
+                Showing {paginatedStocks.length} of {filteredStocks.length} stocks 
+                (Page {currentPage} of {totalPages})
               </p>
             </div>
             <Button 
@@ -380,7 +303,7 @@ const StockList = () => {
         )}
 
         {/* Stock Table */}
-        {!isLoading && filteredStocks.length > 0 && (
+        {!isLoading && paginatedStocks.length > 0 && (
           <>
             <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
               <Table>
@@ -398,9 +321,9 @@ const StockList = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStocks.map((stock) => (
+                  {paginatedStocks.map((stock, index) => (
                     <TableRow 
-                      key={stock.symbol} 
+                      key={`${stock.symbol}-${index}`}
                       className="border-b border-slate-700 hover:bg-slate-700/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/stock/${stock.symbol}`)}
                     >
@@ -433,13 +356,35 @@ const StockList = () => {
               </Table>
             </div>
             
-            {/* Pagination */}
-            {renderPagination()}
+            {/* Simple Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <Button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                >
+                  Previous
+                </Button>
+                <span className="text-white px-4">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                  className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </>
         )}
 
         {/* No Results */}
-        {!isLoading && filteredStocks.length === 0 && processedStocks.length > 0 && (
+        {!isLoading && paginatedStocks.length === 0 && processedStocks.length > 0 && (
           <div className="text-center py-8">
             <p className="text-slate-400">No stocks found matching your filters.</p>
             <Button 

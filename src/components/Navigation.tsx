@@ -1,16 +1,21 @@
-
 import React from 'react';
-import { TrendingUp, BarChart3, Search, Zap, Home } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { TrendingUp, BarChart3, Search, Zap, Home, List } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Navigation = () => {
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const navigationItems = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Stock List', href: '/stocks', icon: BarChart3 },
-    { name: 'Search & Filter', href: '/search', icon: Search },
-    { name: 'F&O Calls', href: '/futures-options', icon: Zap },
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    navigate('/login');
+  };
+
+  const navItems = [
+    { path: '/', label: 'Dashboard', icon: Home },
+    { path: '/stocks', label: 'Stock List', icon: List },
+    { path: '/search', label: 'Search & Filter', icon: Search },
+    { path: '/trading-recommendations', label: 'Trading Recommendations', icon: TrendingUp },
   ];
 
   return (
@@ -24,12 +29,12 @@ const Navigation = () => {
             </div>
           </div>
           <div className="flex items-center space-x-8">
-            {navigationItems.map((item) => {
-              const isActive = location.pathname === item.href;
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
               return (
                 <Link
-                  key={item.name}
-                  to={item.href}
+                  key={item.label}
+                  to={item.path}
                   className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive
                       ? 'text-emerald-400 bg-slate-800'
@@ -37,7 +42,7 @@ const Navigation = () => {
                   }`}
                 >
                   <item.icon className="h-4 w-4 mr-2" />
-                  {item.name}
+                  {item.label}
                 </Link>
               );
             })}

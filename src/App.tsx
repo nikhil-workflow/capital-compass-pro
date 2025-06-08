@@ -1,58 +1,62 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Login from "./pages/Login";
-import Index from "./pages/Index";
-import StockList from "./pages/StockList";
-import SearchFilter from "./pages/SearchFilter";
-import FuturesOptions from "./pages/FuturesOptions";
-import StockDetail from "./pages/StockDetail";
-import NotFound from "./pages/NotFound";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import Login from './pages/Login';
+import Index from './pages/Index';
+import StockList from './pages/StockList';
+import SearchFilter from './pages/SearchFilter';
+import StockDetail from './pages/StockDetail';
+import NotFound from './pages/NotFound';
+import TradingRecommendations from './pages/TradingRecommendations';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+// Protected Route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated');
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } />
-          <Route path="/stocks" element={
-            <ProtectedRoute>
-              <StockList />
-            </ProtectedRoute>
-          } />
-          <Route path="/search" element={
-            <ProtectedRoute>
-              <SearchFilter />
-            </ProtectedRoute>
-          } />
-          <Route path="/futures-options" element={
-            <ProtectedRoute>
-              <FuturesOptions />
-            </ProtectedRoute>
-          } />
-          <Route path="/stock/:symbol" element={
-            <ProtectedRoute>
-              <StockDetail />
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="App">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/stocks" element={
+              <ProtectedRoute>
+                <StockList />
+              </ProtectedRoute>
+            } />
+            <Route path="/search" element={
+              <ProtectedRoute>
+                <SearchFilter />
+              </ProtectedRoute>
+            } />
+            <Route path="/trading-recommendations" element={
+              <ProtectedRoute>
+                <TradingRecommendations />
+              </ProtectedRoute>
+            } />
+            <Route path="/stock/:symbol" element={
+              <ProtectedRoute>
+                <StockDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      <Toaster />
+    </QueryClientProvider>
+  );
+}
 
 export default App;
