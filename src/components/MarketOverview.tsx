@@ -10,91 +10,38 @@ const MarketOverview = () => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        console.log('Fetching market indices data...');
-        const indicesData = await upstoxApi.getAllIndices();
-        console.log('Indices data received:', indicesData);
+        console.log('Fetching real market data from APIs...');
         
-        if (indicesData?.data && Array.isArray(indicesData.data)) {
-          const formattedData = indicesData.data.slice(0, 4).map((index: any) => ({
-            name: index.instrument_name || index.symbol || 'Unknown',
-            value: index.last_price ? index.last_price.toFixed(2) : '0.00',
-            change: index.net_change ? (index.net_change >= 0 ? `+${index.net_change.toFixed(2)}` : index.net_change.toFixed(2)) : '0.00',
+        // Try to get real market data from Indian API
+        const response = await upstoxApi.getRealMarketIndices();
+        console.log('Market indices response:', response);
+        
+        if (response?.data && Array.isArray(response.data) && response.data.length > 0) {
+          const formattedData = response.data.slice(0, 4).map((index: any) => ({
+            name: index.name || index.symbol || 'Unknown',
+            value: index.price ? parseFloat(index.price).toFixed(2) : '0.00',
+            change: index.change ? (index.change >= 0 ? `+${index.change.toFixed(2)}` : index.change.toFixed(2)) : '0.00',
             percentage: index.percentage_change ? `${index.percentage_change >= 0 ? '+' : ''}${index.percentage_change.toFixed(2)}%` : '0.00%',
-            trend: (index.net_change || 0) >= 0 ? 'up' : 'down',
+            trend: (index.change || 0) >= 0 ? 'up' : 'down',
           }));
           setMarketData(formattedData);
         } else {
-          // Fallback to mock data if API fails
-          setMarketData([
-            {
-              name: 'NIFTY 50',
-              value: '19,674.25',
-              change: '+127.85',
-              percentage: '+0.65%',
-              trend: 'up',
-            },
-            {
-              name: 'BANK NIFTY',
-              value: '44,312.70',
-              change: '-89.45',
-              percentage: '-0.20%',
-              trend: 'down',
-            },
-            {
-              name: 'SENSEX',
-              value: '65,953.48',
-              change: '+423.12',
-              percentage: '+0.65%',
-              trend: 'up',
-            },
-            {
-              name: 'VIX',
-              value: '13.42',
-              change: '-0.67',
-              percentage: '-4.76%',
-              trend: 'down',
-            },
-          ]);
+          console.log('No valid market data received, showing empty state');
+          setMarketData([]);
         }
       } catch (error) {
         console.error('Failed to fetch market data:', error);
-        // Use fallback data
-        setMarketData([
-          {
-            name: 'NIFTY 50',
-            value: '19,674.25',
-            change: '+127.85',
-            percentage: '+0.65%',
-            trend: 'up',
-          },
-          {
-            name: 'BANK NIFTY',
-            value: '44,312.70',
-            change: '-89.45',
-            percentage: '-0.20%',
-            trend: 'down',
-          },
-          {
-            name: 'SENSEX',
-            value: '65,953.48',
-            change: '+423.12',
-            percentage: '+0.65%',
-            trend: 'up',
-          },
-          {
-            name: 'VIX',
-            value: '13.42',
-            change: '-0.67',
-            percentage: '-4.76%',
-            trend: 'down',
-          },
-        ]);
+        setMarketData([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMarketData();
+    
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchMarketData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -107,6 +54,20 @@ const MarketOverview = () => {
             <div className="h-4 bg-slate-700 rounded w-1/2"></div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (marketData.length === 0) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 col-span-full">
+          <div className="text-center text-slate-400">
+            <Activity className="h-8 w-8 mx-auto mb-2" />
+            <p>Market data unavailable</p>
+            <p className="text-sm">Please check API configuration</p>
+          </div>
+        </div>
       </div>
     );
   }

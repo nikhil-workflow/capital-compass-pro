@@ -23,8 +23,8 @@ const Login = () => {
 
     // Simple authentication logic - in real app, this would be API call
     if (credentials.username && credentials.password) {
-      // Store login state
-      localStorage.setItem('isLoggedIn', 'true');
+      // Store login state with the correct key that App.tsx expects
+      localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('username', credentials.username);
       
       toast({
