@@ -1,3 +1,4 @@
+
 const UPSTOX_ACCESS_TOKEN = 'eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI2M0I5WFkiLCJqdGkiOiI2ODQ1MmI5YmE0Y2FkMTUyOTg2Mzg5ZTMiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlhdCI6MTc0OTM2MzYxMSwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxNzQ5NDIwMDAwfQ.HDdS_xTSugziSQFpN8X5BaJhJzka778NlOwc0JlXDXc';
 const UPSTOX_BASE_URL = 'https://api.upstox.com/v2';
 
@@ -28,7 +29,7 @@ class UpstoxApiService {
     }
   }
 
-  private async makeIndianApiRequest(endpoint: string) {
+  async makeIndianApiRequest(endpoint: string) {
     try {
       console.log(`Making Indian API request to: ${INDIAN_API_BASE_URL}${endpoint}`);
       const response = await fetch(`${INDIAN_API_BASE_URL}${endpoint}`, {

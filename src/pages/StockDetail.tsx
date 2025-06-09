@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
@@ -20,71 +19,71 @@ const StockDetail = () => {
   const [sentimentData, setSentimentData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStockData = async () => {
-      if (!symbol) return;
+  const fetchStockData = async () => {
+    if (!symbol) return;
+    
+    setLoading(true);
+    try {
+      console.log(`Fetching comprehensive data for ${symbol}...`);
       
-      setLoading(true);
-      try {
-        console.log(`Fetching comprehensive data for ${symbol}...`);
-        
-        // Fetch stock quote data
-        const quoteData = await upstoxApi.getQuote(symbol);
-        console.log('Quote data:', quoteData);
-        setStockData(quoteData?.data);
+      // Fetch stock quote data
+      const quoteData = await upstoxApi.getQuote(symbol);
+      console.log('Quote data:', quoteData);
+      setStockData(quoteData?.data);
 
-        // Fetch additional data endpoints
-        const [forecastData, targetPriceData, newsData] = await Promise.all([
-          upstoxApi.getStockForecasts(symbol).catch(e => null),
-          upstoxApi.getStockTargetPrice(symbol).catch(e => null),
-          upstoxApi.getNews().catch(e => null)
-        ]);
+      // Fetch additional data endpoints
+      const [forecastData, targetPriceData, newsData] = await Promise.all([
+        upstoxApi.getStockForecasts(symbol).catch(e => null),
+        upstoxApi.getStockTargetPrice(symbol).catch(e => null),
+        upstoxApi.getNews().catch(e => null)
+      ]);
 
-        // Set fundamental data
-        setFundamentalData({
-          pe: quoteData?.data?.pe || Math.floor(Math.random() * 30) + 5,
-          marketCap: quoteData?.data?.market_cap || Math.floor(Math.random() * 100000) + 10000,
-          bookValue: Math.floor(Math.random() * 500) + 100,
-          dividendYield: (Math.random() * 5).toFixed(2),
-          roe: Math.floor(Math.random() * 25) + 5,
-          debtToEquity: (Math.random() * 2).toFixed(2),
-          eps: (Math.random() * 50).toFixed(2),
-          revenue: Math.floor(Math.random() * 50000) + 5000
-        });
+      // Set fundamental data
+      setFundamentalData({
+        pe: quoteData?.data?.pe || Math.floor(Math.random() * 30) + 5,
+        marketCap: quoteData?.data?.market_cap || Math.floor(Math.random() * 100000) + 10000,
+        bookValue: Math.floor(Math.random() * 500) + 100,
+        dividendYield: (Math.random() * 5).toFixed(2),
+        roe: Math.floor(Math.random() * 25) + 5,
+        debtToEquity: (Math.random() * 2).toFixed(2),
+        eps: (Math.random() * 50).toFixed(2),
+        revenue: Math.floor(Math.random() * 50000) + 5000
+      });
 
-        // Set technical data
-        setTechnicalData({
-          rsi: Math.floor(Math.random() * 100),
-          macd: quoteData?.data?.change > 0 ? 'Bullish' : 'Bearish',
-          sma20: (quoteData?.data?.price || 100) * (0.95 + Math.random() * 0.1),
-          sma50: (quoteData?.data?.price || 100) * (0.9 + Math.random() * 0.2),
-          resistance: (quoteData?.data?.price || 100) * 1.1,
-          support: (quoteData?.data?.price || 100) * 0.9,
-          targetPrice: targetPriceData?.data?.target_price || (quoteData?.data?.price || 100) * 1.15,
-          forecast: forecastData?.data?.forecast || 'Positive'
-        });
+      // Set technical data
+      setTechnicalData({
+        rsi: Math.floor(Math.random() * 100),
+        macd: quoteData?.data?.change > 0 ? 'Bullish' : 'Bearish',
+        sma20: (quoteData?.data?.price || 100) * (0.95 + Math.random() * 0.1),
+        sma50: (quoteData?.data?.price || 100) * (0.9 + Math.random() * 0.2),
+        resistance: (quoteData?.data?.price || 100) * 1.1,
+        support: (quoteData?.data?.price || 100) * 0.9,
+        targetPrice: targetPriceData?.data?.target_price || (quoteData?.data?.price || 100) * 1.15,
+        forecast: forecastData?.data?.forecast || 'Positive'
+      });
 
-        // Set sentiment data
-        setSentimentData({
-          overall: quoteData?.data?.change > 0 ? 'Positive' : 'Negative',
-          recommendation: quoteData?.data?.pChange > 2 ? 'BUY' : quoteData?.data?.pChange < -2 ? 'SELL' : 'HOLD',
-          analystRating: Math.floor(Math.random() * 5) + 1,
-          newsCount: newsData?.data?.length || Math.floor(Math.random() * 10) + 1,
-          socialScore: Math.floor(Math.random() * 100) + 1
-        });
+      // Set sentiment data
+      setSentimentData({
+        overall: quoteData?.data?.change > 0 ? 'Positive' : 'Negative',
+        recommendation: quoteData?.data?.pChange > 2 ? 'BUY' : quoteData?.data?.pChange < -2 ? 'SELL' : 'HOLD',
+        analystRating: Math.floor(Math.random() * 5) + 1,
+        newsCount: newsData?.data?.length || Math.floor(Math.random() * 10) + 1,
+        socialScore: Math.floor(Math.random() * 100) + 1
+      });
 
-      } catch (error) {
-        console.error('Failed to fetch stock data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch stock details. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (error) {
+      console.error('Failed to fetch stock data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch stock details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchStockData();
   }, [symbol, toast]);
 
