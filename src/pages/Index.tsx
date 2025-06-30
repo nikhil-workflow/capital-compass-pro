@@ -1,6 +1,7 @@
 
 import React from 'react';
 import Navigation from '../components/Navigation';
+import MarketSentiment from '../components/MarketSentiment';
 import MarketOverview from '../components/MarketOverview';
 import SectorSentiment from '../components/SectorSentiment';
 import MarketHighlights from '../components/MarketHighlights';
@@ -19,6 +20,9 @@ const Index = () => {
           <h1 className="text-3xl font-bold text-white mb-2">Market Dashboard - Real-time Data</h1>
           <p className="text-slate-400">Live market analysis powered by Upstox API with comprehensive trading recommendations</p>
         </div>
+
+        {/* Market Sentiment - NEW */}
+        <MarketSentiment />
 
         {/* Market Status Widget */}
         <div className="mb-6">
